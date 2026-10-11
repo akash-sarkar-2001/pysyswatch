@@ -18,7 +18,9 @@ def collect_processes(sort_by: str = "cpu", limit: int = 20) -> list[ProcessInfo
         # We need a brief sleep for psutil to accurately calculate CPU percent per process
         # Using a context manager ensures we capture it across all processes simultaneously
         # Initialize cpu_percent for all processes first (non-blocking)
-        procs = list(psutil.process_iter(["pid", "name", "username", "status", "create_time"]))
+        procs = list(
+            psutil.process_iter(["pid", "name", "username", "status", "create_time"])
+        )
         for proc in procs:
             try:
                 proc.cpu_percent(interval=None)
@@ -27,6 +29,7 @@ def collect_processes(sort_by: str = "cpu", limit: int = 20) -> list[ProcessInfo
 
         # Wait once for the whole system
         import time
+
         time.sleep(0.1)
 
         for proc in procs:
