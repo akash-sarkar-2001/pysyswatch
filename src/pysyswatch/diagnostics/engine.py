@@ -69,7 +69,17 @@ def evaluate_system_health(
 
     # Evaluate Network (if available)
     if network:
-        ignore_prefixes = ("lo", "docker", "veth", "br-", "tailscale", "tun", "tap", "wg", "Local Area Connection")
+        ignore_prefixes = (
+            "lo",
+            "docker",
+            "veth",
+            "br-",
+            "tailscale",
+            "tun",
+            "tap",
+            "wg",
+            "Local Area Connection",
+        )
         for name, iface in network.interfaces.items():
             if not iface.is_up and not name.startswith(ignore_prefixes):
                 issues.append(

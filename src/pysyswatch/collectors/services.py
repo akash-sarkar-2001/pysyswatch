@@ -11,7 +11,10 @@ def is_systemd_running() -> bool:
     try:
         # Check if systemd is PID 1 or active in the environment
         result = subprocess.run(
-            ["systemctl", "is-system-running"], capture_output=True, text=True, check=False
+            ["systemctl", "is-system-running"],
+            capture_output=True,
+            text=True,
+            check=False,
         )
         # Even if the system is degraded, systemctl works.
         # Only 'offline' or a missing binary indicates unavailability.

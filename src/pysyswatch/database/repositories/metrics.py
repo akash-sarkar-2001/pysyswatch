@@ -1,4 +1,5 @@
 import logging
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
@@ -10,8 +11,6 @@ from pysyswatch.models.schemas import (
     MemoryMetrics,
     NetworkMetrics,
 )
-
-from datetime import datetime, timezone, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +29,12 @@ def save_system_snapshot(
         max_disk = max((p.usage_percent for p in disk.partitions), default=0.0)
 
         # Aggregate total network I/O across all active interfaces
-        total_rx = sum(i.rx_bytes for i in network.interfaces.values()) if network else 0
-        total_tx = sum(i.tx_bytes for i in network.interfaces.values()) if network else 0
+        total_rx = (
+            sum(i.rx_bytes for i in network.interfaces.values()) if network else 0
+        )
+        total_tx = (
+            sum(i.tx_bytes for i in network.interfaces.values()) if network else 0
+        )
 
         metric_record = SystemMetric(
             cpu_usage=cpu.usage_percent,
@@ -50,15 +53,22 @@ def save_system_snapshot(
         db.rollback()
         logger.error(f"Failed to persist metrics snapshot: {e}")
 
+
 def prune_old_metrics(db: Session, retention_days: int) -> int:
     """Deletes system metrics older than the retention policy."""
     try:
-        cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+        cutoff = datetime.now(UTC) - timedelta(days=retention_days)
         # SQLAlchemy 2.0 delete syntax
-        deleted_count = db.query(SystemMetric).filter(SystemMetric.timestamp < cutoff).delete()
+        deleted_count = (
+            db.query(SystemMetric)
+            .filter(SystemMetric.timestamp < cutoff)  # type: ignore[arg-type]
+            .delete()
+        )
         db.commit()
         if deleted_count > 0:
-            logger.info(f"Pruned {deleted_count} historical metric records older than {retention_days} days.")
+            logger.info(
+                f"Pruned {deleted_count} historical metric records older than {retention_days} days."
+            )
         return deleted_count
     except Exception as e:
         db.rollback()

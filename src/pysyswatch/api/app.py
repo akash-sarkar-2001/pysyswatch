@@ -33,7 +33,9 @@ app.add_middleware(
 
 # Global Exception Handler for custom application errors
 @app.exception_handler(PySysWatchError)
-async def pysyswatch_exception_handler(request: Request, exc: PySysWatchError) -> JSONResponse:
+async def pysyswatch_exception_handler(
+    request: Request, exc: PySysWatchError
+) -> JSONResponse:
     logger.error(f"API Error at {request.url.path}: {exc!s}")
     return JSONResponse(
         status_code=500,
@@ -55,11 +57,13 @@ async def liveness_probe() -> dict[str, str]:
     return {"status": "ok", "version": __version__}
 
 
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
+
 
 @app.get("/", include_in_schema=False)
 def redirect_root() -> RedirectResponse:
     return RedirectResponse(url="/dashboard")
+
 
 @app.get("/dashboard", response_class=HTMLResponse, tags=["Dashboard"])
 def serve_dashboard() -> str:

@@ -6,7 +6,11 @@ class Settings(BaseSettings):
     api_key: str | None = None
     database_url: str = "sqlite:///pysyswatch.db"
     log_level: str = "INFO"
-    cors_origins: list[str] = ["http://localhost", "http://localhost:8001", "http://127.0.0.1:8001"]
+    cors_origins: list[str] = [
+        "http://localhost",
+        "http://localhost:8001",
+        "http://127.0.0.1:8001",
+    ]
     rate_limit_per_minute: int = 60
 
     # Daemon Configuration
