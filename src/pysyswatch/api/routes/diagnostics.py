@@ -19,22 +19,26 @@ async def get_system_status() -> SystemStatus:
         cpu, mem, disk = await asyncio.gather(
             asyncio.to_thread(collect_cpu_metrics),
             asyncio.to_thread(collect_memory_metrics),
-            asyncio.to_thread(collect_disk_metrics)
+            asyncio.to_thread(collect_disk_metrics),
         )
-        
+
         try:
             from pysyswatch.collectors.services import collect_services
+
             svcs = await asyncio.to_thread(collect_services)
         except Exception:
             svcs = None
-            
+
         try:
             from pysyswatch.collectors.network import collect_network_metrics
+
             net = await asyncio.to_thread(collect_network_metrics)
         except Exception:
             net = None
 
-        health = evaluate_system_health(cpu=cpu, memory=mem, disk=disk, services=svcs, network=net)
+        health = evaluate_system_health(
+            cpu=cpu, memory=mem, disk=disk, services=svcs, network=net
+        )
 
         return SystemStatus(cpu=cpu, memory=mem, disk=disk, health=health)
     except CollectorError as e:
@@ -54,16 +58,20 @@ async def get_health_only() -> HealthDiagnosis:
         )
         try:
             from pysyswatch.collectors.services import collect_services
+
             svcs = await asyncio.to_thread(collect_services)
         except Exception:
             svcs = None
-            
+
         try:
             from pysyswatch.collectors.network import collect_network_metrics
+
             net = await asyncio.to_thread(collect_network_metrics)
         except Exception:
             net = None
-            
-        return evaluate_system_health(cpu=cpu, memory=mem, disk=disk, services=svcs, network=net)
+
+        return evaluate_system_health(
+            cpu=cpu, memory=mem, disk=disk, services=svcs, network=net
+        )
     except CollectorError as e:
         raise HTTPException(status_code=500, detail=f"Health evaluation failed: {e}")

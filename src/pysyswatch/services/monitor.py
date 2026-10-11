@@ -6,17 +6,18 @@ from typing import Any
 from pysyswatch.collectors.cpu import collect_cpu_metrics
 from pysyswatch.collectors.disk import collect_disk_metrics
 from pysyswatch.collectors.memory import collect_memory_metrics
-from pysyswatch.collectors.services import collect_services
-from pysyswatch.core.exceptions import ServiceUnavailableError
 from pysyswatch.collectors.network import collect_network_metrics
+from pysyswatch.collectors.services import collect_services
 from pysyswatch.config.settings import settings
 from pysyswatch.core.exceptions import CollectorError
 from pysyswatch.database.engine import SessionLocal, init_db
-from pysyswatch.database.repositories.metrics import save_system_snapshot
+from pysyswatch.database.repositories.metrics import (
+    prune_old_metrics,
+    save_system_snapshot,
+)
 from pysyswatch.diagnostics.engine import evaluate_system_health
-from pysyswatch.services.notifier import send_alert_if_needed
-from pysyswatch.database.repositories.metrics import prune_old_metrics
 from pysyswatch.models.schemas import HealthState
+from pysyswatch.services.notifier import send_alert_if_needed
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +91,9 @@ class BackgroundMonitor:
                 svcs = collect_services()
             except Exception:
                 svcs = None
-            health = evaluate_system_health(cpu=cpu, memory=mem, disk=disk, network=net, services=svcs)
+            health = evaluate_system_health(
+                cpu=cpu, memory=mem, disk=disk, network=net, services=svcs
+            )
 
             # 1. Trigger Webhook Alert if state degraded
             send_alert_if_needed(health, self._last_health_state)
@@ -106,7 +109,7 @@ class BackgroundMonitor:
                 save_system_snapshot(
                     db=db, cpu=cpu, memory=mem, disk=disk, network=net, health=health
                 )
-                
+
                 # 3. Prune old data once per hour (assuming 10s interval = 360 ticks)
                 self._tick_count += 1
                 if self._tick_count >= 360:

@@ -1,6 +1,6 @@
 import logging
-from typing import Any
 from collections.abc import Generator
+from typing import Any
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker

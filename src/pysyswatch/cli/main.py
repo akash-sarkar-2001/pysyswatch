@@ -1,8 +1,10 @@
+import time
+
 import typer
 from rich.console import Console
-from rich.table import Table
 from rich.live import Live
-import time
+from rich.table import Table
+
 import pysyswatch
 from pysyswatch.collectors.cpu import collect_cpu_metrics
 from pysyswatch.collectors.disk import collect_disk_metrics
@@ -40,14 +42,20 @@ app = typer.Typer(
 )
 console = Console()
 
+
 @app.command()
 def dashboard(
     port: int = typer.Option(8001, "--port", "-p", help="Port to run the dashboard on"),
-    host: str = typer.Option("127.0.0.1", "--host", "-h", help="Host to bind the API to")
+    host: str = typer.Option(
+        "127.0.0.1", "--host", "-h", help="Host to bind the API to"
+    ),
 ) -> None:
     """Start the REST API and professional web dashboard."""
     import uvicorn
-    console.print(f"[bold green]Starting PySysWatch Dashboard at http://{host}:{port}/dashboard[/bold green]")
+
+    console.print(
+        f"[bold green]Starting PySysWatch Dashboard at http://{host}:{port}/dashboard[/bold green]"
+    )
     try:
         uvicorn.run("pysyswatch.api.app:app", host=host, port=port, log_level="info")
     except Exception as e:
@@ -523,29 +531,34 @@ def daemon() -> None:
         console.print(f"[bold red]Daemon crashed:[/bold red] {e}")
         raise typer.Exit(1)
 
+
 @app.command()
-def status(json_output: bool = typer.Option(False, "--json", help="Output in JSON format")) -> None:
+def status(
+    json_output: bool = typer.Option(False, "--json", help="Output in JSON format"),
+) -> None:
     """Display overall system status and health."""
     try:
         from pysyswatch.diagnostics.engine import evaluate_system_health
         from pysyswatch.models.schemas import SystemStatus
-        
+
         cpu = collect_cpu_metrics()
         mem = collect_memory_metrics()
         disk = collect_disk_metrics()
-        
+
         try:
             services = collect_services()
         except Exception:
             services = None
-            
+
         try:
             network = collect_network_metrics()
         except Exception:
             network = None
-            
-        health = evaluate_system_health(cpu=cpu, memory=mem, disk=disk, services=services, network=network)
-        
+
+        health = evaluate_system_health(
+            cpu=cpu, memory=mem, disk=disk, services=services, network=network
+        )
+
         if json_output:
             status_data = SystemStatus(cpu=cpu, memory=mem, disk=disk, health=health)
             typer.echo(status_data.model_dump_json(indent=2))
@@ -557,28 +570,40 @@ def status(json_output: bool = typer.Option(False, "--json", help="Output in JSO
 
         table.add_section()
         table.add_row("CPU Usage", f"{cpu.usage_percent}%")
-        table.add_row("CPU Load", f"{cpu.load_average[0]:.2f} / {cpu.load_average[1]:.2f} / {cpu.load_average[2]:.2f}")
-        
+        table.add_row(
+            "CPU Load",
+            f"{cpu.load_average[0]:.2f} / {cpu.load_average[1]:.2f} / {cpu.load_average[2]:.2f}",
+        )
+
         table.add_section()
         table.add_row("Memory Usage", f"{mem.usage_percent}%")
         table.add_row("Memory Used", f"{mem.used_gb} GB / {mem.total_gb} GB")
-        
+
         table.add_section()
-        health_color = "green" if health.state == "HEALTHY" else "yellow" if health.state == "WARNING" else "red"
-        table.add_row("Health Status", f"[{health_color}]{health.state.value}[/{health_color}]")
-        
+        health_color = (
+            "green"
+            if health.state == "HEALTHY"
+            else "yellow"
+            if health.state == "WARNING"
+            else "red"
+        )
+        table.add_row(
+            "Health Status", f"[{health_color}]{health.state.value}[/{health_color}]"
+        )
+
         for issue in health.issues:
-             table.add_row(" -> Issue", f"[red]{issue}[/red]")
+            table.add_row(" -> Issue", f"[red]{issue}[/red]")
 
         console.print(table)
     except Exception as e:
         console.print(f"[bold red]Error:[/bold red] {e}")
         raise typer.Exit(1)
 
+
 def generate_status_table() -> Table:
     """Helper function to generate the status table dynamically."""
     from pysyswatch.diagnostics.engine import evaluate_system_health
-    
+
     cpu = collect_cpu_metrics()
     mem = collect_memory_metrics()
     disk = collect_disk_metrics()
@@ -586,13 +611,15 @@ def generate_status_table() -> Table:
         services = collect_services()
     except Exception:
         services = None
-        
+
     try:
         network = collect_network_metrics()
     except Exception:
         network = None
 
-    health = evaluate_system_health(cpu=cpu, memory=mem, disk=disk, services=services, network=network)
+    health = evaluate_system_health(
+        cpu=cpu, memory=mem, disk=disk, services=services, network=network
+    )
 
     table = Table(title="PySysWatch Live Status", show_header=False, width=60)
     table.add_column("Metric", style="cyan", width=20)
@@ -600,27 +627,43 @@ def generate_status_table() -> Table:
 
     table.add_section()
     table.add_row("CPU Usage", f"{cpu.usage_percent}%")
-    table.add_row("CPU Load", f"{cpu.load_average[0]:.2f} / {cpu.load_average[1]:.2f} / {cpu.load_average[2]:.2f}")
-    
+    table.add_row(
+        "CPU Load",
+        f"{cpu.load_average[0]:.2f} / {cpu.load_average[1]:.2f} / {cpu.load_average[2]:.2f}",
+    )
+
     table.add_section()
     table.add_row("Memory Usage", f"{mem.usage_percent}%")
     table.add_row("Memory Used", f"{mem.used_gb} GB / {mem.total_gb} GB")
-    
+
     table.add_section()
-    health_color = "green" if health.state == "HEALTHY" else "yellow" if health.state == "WARNING" else "red"
-    table.add_row("Health Status", f"[{health_color}]{health.state.value}[/{health_color}]")
-    
+    health_color = (
+        "green"
+        if health.state == "HEALTHY"
+        else "yellow"
+        if health.state == "WARNING"
+        else "red"
+    )
+    table.add_row(
+        "Health Status", f"[{health_color}]{health.state.value}[/{health_color}]"
+    )
+
     for issue in health.issues:
-         table.add_row(" -> Issue", f"[red]{issue}[/red]")
-         
+        table.add_row(" -> Issue", f"[red]{issue}[/red]")
+
     return table
 
+
 @app.command()
-def top(refresh: int = typer.Option(2, "--refresh", help="Refresh interval in seconds")) -> None:
+def top(
+    refresh: int = typer.Option(2, "--refresh", help="Refresh interval in seconds"),
+) -> None:
     """Start a live-updating terminal dashboard."""
     try:
         # Use Rich's Live view to clear and redraw the table seamlessly
-        with Live(generate_status_table(), refresh_per_second=1/refresh, screen=True) as live:
+        with Live(
+            generate_status_table(), refresh_per_second=1 / refresh, screen=True
+        ) as live:
             while True:
                 time.sleep(refresh)
                 live.update(generate_status_table())
