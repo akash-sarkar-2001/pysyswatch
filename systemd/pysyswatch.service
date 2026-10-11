@@ -1,0 +1,35 @@
+[Unit]
+Description=PySysWatch Background Monitoring Daemon
+Documentation=https://github.com/yourusername/pysyswatch
+After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+# Assumes installation in a virtual environment under /opt
+ExecStart=/opt/pysyswatch/venv/bin/pysyswatch daemon
+Restart=on-failure
+RestartSec=5
+
+# Environment Configuration
+Environment="PYSYSWATCH_LOG_LEVEL=INFO"
+EnvironmentFile=-/etc/pysyswatch/.env
+
+# Process & Ownership
+User=pysyswatch
+Group=pysyswatch
+TimeoutStopSec=10
+
+# Security Hardening (Least Privilege)
+ProtectSystem=full
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+RestrictNamespaces=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+
+[Install]
+WantedBy=multi-user.target

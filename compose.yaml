@@ -1,0 +1,41 @@
+services:
+  api:
+    build: .
+    ports:
+      - "127.0.0.1:8001:8001"
+    environment:
+      - PYSYSWATCH_DATABASE_URL=sqlite:////app/data/pysyswatch.db
+      - PYSYSWATCH_LOG_LEVEL=INFO
+      - PYSYSWATCH_API_KEY=${PYSYSWATCH_API_KEY:?Set PYSYSWATCH_API_KEY in your .env file}
+    volumes:
+      - dbdata:/app/data
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+
+  daemon:
+    build: .
+    command: [ "pysyswatch", "daemon" ]
+    environment:
+      - PYSYSWATCH_DATABASE_URL=sqlite:////app/data/pysyswatch.db
+      - PYSYSWATCH_LOG_LEVEL=INFO
+      # Tell psutil to look at the mounted host filesystems instead of the container's
+      - PROCFS_PATH=/host/proc
+    # Required to monitor host processes and network correctly
+    pid: "host"
+    network_mode: "host"
+    user: "root"
+    volumes:
+      - dbdata:/app/data
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host/root:ro
+      - /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket:ro # For systemd integration
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+volumes:
+  dbdata:
